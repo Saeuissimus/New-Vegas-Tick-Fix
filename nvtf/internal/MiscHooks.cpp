@@ -18,7 +18,6 @@ namespace MiscHooks
 			bDoPurgeCells = 1;
 		}
 		return true;
-
 	}
 
 	bool __cdecl PurgeCellBuffers()
@@ -43,7 +42,5 @@ namespace MiscHooks
 			WriteRelJump(0x05B6CD0, hk_Script_PCB);
 			CommonUtils::GetUtilsManager()->RegisterMainLoopFunction(PurgeCellBuffers);
 		}
-			
 	}
-
 };
