@@ -76,7 +76,7 @@ void WriteRelJle(SIZE_T jumpSrc, SIZE_T jumpTgt)
 
 void PatchMemoryNop(ULONG_PTR Address, SIZE_T Size)
 {
-	DWORD d = 0;
+	SIZE_T d = 0;
 	VirtualProtect((LPVOID)Address, Size, PAGE_EXECUTE_READWRITE, &d);
 
 	for (SIZE_T i = 0; i < Size; i++)
