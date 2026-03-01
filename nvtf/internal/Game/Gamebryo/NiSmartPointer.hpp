@@ -8,6 +8,20 @@ public:
 	__forceinline NiPointer(const NiPointer& arPtr) : m_pObject(arPtr.m_pObject) { if (m_pObject) m_pObject->IncRefCount(); }
 	__forceinline ~NiPointer() { if (m_pObject) m_pObject->DecRefCount(); }
 
+	__forceinline NiPointer(NiPointer&& other) noexcept	: m_pObject(other.m_pObject) {
+		other.m_pObject = nullptr;
+	}
+
+	__forceinline NiPointer& operator=(NiPointer&& other) noexcept {
+		if (this != &other) {
+			if (m_pObject)
+				m_pObject->DecRefCount();
+			m_pObject = other.m_pObject;
+			other.m_pObject = nullptr;
+		}
+		return *this;
+	}
+
 	T* m_pObject;
 
 	__forceinline operator T* () const { return m_pObject; }
