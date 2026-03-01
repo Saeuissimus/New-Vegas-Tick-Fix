@@ -8,10 +8,15 @@
 #include <internal/TickFix.hpp>
 #include <internal/MiscHooks.hpp>
 #include <internal/Common/CommonUtils.hpp>
+#include <internal/Common/DebugLog.hpp>
 constexpr uint32_t		MIN_NVSE_VERSION = PACKED_NVSE_VERSION;
 constexpr uint32_t		PLUGIN_VERSION = 1061;
 constexpr const char*	PLUGIN_NAME = "NVTF";
 constexpr const char*	PLUGIN_FULL_NAME = "New Vegas Tick Fix";
+
+IDebugLog gLog("logs\\NVTF.log");
+
+uint32_t queryCount = 0;
 
 namespace Main {
 
@@ -83,6 +88,7 @@ namespace Main {
 
 
 EXTERN_DLL_EXPORT bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info) {
+	++queryCount;
 	info->name			= PLUGIN_NAME;
 	info->version		= PLUGIN_VERSION;
 	info->infoVersion	= PluginInfo::kInfoVersion;
@@ -100,7 +106,11 @@ EXTERN_DLL_EXPORT bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* i
 		return false;
 	}
 
-	return !nvse->isEditor;
+	if (queryCount > 1) {
+		_MESSAGE("Was queried by xNVSE more than once!");
+	}
+
+	return !nvse->isEditor && queryCount == 1;
 }
 
 EXTERN_DLL_EXPORT bool NVSEPlugin_Preload() {

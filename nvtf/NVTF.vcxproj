@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClCompile Include="..\shared\SafeWrite\SafeWrite.cpp" />
     <ClCompile Include="internal\FastExit.cpp" />
+    <ClCompile Include="internal\Common\DebugLog.cpp" />
     <ClCompile Include="internal\Game\Bethesda\BGSSaveLoadGame.cpp" />
     <ClCompile Include="internal\Game\Bethesda\bhkWorld.cpp" />
     <ClCompile Include="internal\Game\Bethesda\BSTimer.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="..\shared\Defines.hpp" />
     <ClInclude Include="..\shared\SafeWrite\SafeWrite.hpp" />
     <ClInclude Include="internal\Common\CommonUtils.hpp" />
+    <ClInclude Include="internal\Common\DebugLog.hpp" />
     <ClInclude Include="internal\FastExit.hpp" />
     <ClInclude Include="internal\Game\Bethesda\BGSSaveLoadGame.hpp" />
     <ClInclude Include="internal\Game\Bethesda\bhkWorld.hpp" />
