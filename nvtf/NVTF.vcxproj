@@ -129,7 +129,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\shared\SafeWrite\SafeWrite.cpp" />
-    <ClCompile Include="internal\Common\CommonUtils.cpp" />
     <ClCompile Include="internal\FastExit.cpp" />
     <ClCompile Include="internal\Game\Bethesda\BGSSaveLoadGame.cpp" />
     <ClCompile Include="internal\Game\Bethesda\bhkWorld.cpp" />

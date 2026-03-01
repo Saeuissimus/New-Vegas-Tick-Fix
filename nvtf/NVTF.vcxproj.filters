@@ -85,9 +85,6 @@
     <ClCompile Include="internal\Game\Bethesda\MemoryLevelManager.cpp">
       <Filter>internal\Game\Bethesda</Filter>
     </ClCompile>
-    <ClCompile Include="internal\Common\CommonUtils.cpp">
-      <Filter>internal\Common</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvse\nvse_version.h">
