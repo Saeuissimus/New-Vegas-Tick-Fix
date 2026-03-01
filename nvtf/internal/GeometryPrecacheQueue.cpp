@@ -2,8 +2,8 @@
 #include "Game/Bethesda/TESMain.hpp"
 #include "Game/Gamebryo/NiDX9Renderer.hpp"
 
-WaitLock				                            GeometryPrecacheQueue::kQueueLock;
-std::queue<GeometryPrecacheQueue::QueuedObject>     GeometryPrecacheQueue::kQueue;
+WaitLock											GeometryPrecacheQueue::kQueueLock;
+std::queue<GeometryPrecacheQueue::QueuedObject>		GeometryPrecacheQueue::kQueue;
 std::vector<NiPointer<NiRefObject>>					GeometryPrecacheQueue::kActiveObjects;
 HANDLE 												GeometryPrecacheQueue::hThread;
 HANDLE												GeometryPrecacheQueue::hTaskEvent;
@@ -13,7 +13,7 @@ void GeometryPrecacheQueue::InitHooks() {
 	if (!InitializeThread())
 		return;
 
-    ReplaceVirtualFuncEx(0x10EE5A8, &PrecacheGeometry_MT);
+	ReplaceVirtualFuncEx(0x10EE5A8, &PrecacheGeometry_MT);
 	WriteRelJumpEx(0xE74120, &PerformPrecache_MT);
 
 	WriteRelJumpEx(0x4A0370, &StopProcessing);
@@ -25,9 +25,10 @@ bool GeometryPrecacheQueue::PrecacheGeometry_MT(NiRefObject* apGeometry, uint32_
 		return PrecacheGeometryEx(apGeometry, auiBonesPerPartition, auiBonesPerVertex, apShaderDeclaration);
 	}
 
-	kQueueLock.Lock();
-	kQueue.push({ apGeometry, auiBonesPerPartition, auiBonesPerVertex, apShaderDeclaration });
-	kQueueLock.Unlock();
+	{
+		WaitLockScope lock(kQueueLock);
+		kQueue.push({ apGeometry, auiBonesPerPartition, auiBonesPerVertex, apShaderDeclaration });
+	}
 
 	SetEvent(hTaskEvent);
 	return true;
@@ -76,24 +77,43 @@ DWORD __stdcall GeometryPrecacheQueue::ThreadProc(LPVOID lpThreadParameter) {
 		NiDX9Renderer* pRenderer = NiDX9Renderer::GetSingleton();
 		if (pRenderer) {
 			const uint32_t uiPrecacheCount = pRenderer->uiPrePackObjectCount;
-			bool bIsEmpty = kQueue.empty();
+			bool bIsEmpty;
+			{
+				WaitLockScope lock(kQueueLock);
+				bIsEmpty = kQueue.empty();
+			}
 			if (uiPrecacheCount > 5 || !bIsEmpty)
 				SetEvent(hTaskEvent);
 
 			WaitForSingleObject(hTaskEvent, INFINITE);
 
-			bIsEmpty = kQueue.empty();
+			size_t queueSize;
+			{
+				WaitLockScope lock(kQueueLock);
+				queueSize = kQueue.size();
+			}
+
+			bIsEmpty = queueSize == 0;
 			if (!bIsEmpty)
-				kActiveObjects.reserve(kQueue.size());
+				kActiveObjects.reserve(queueSize);
 			
-			while (!bIsEmpty && WaitForSingleObject(hPauseEvent, INFINITE) == WAIT_OBJECT_0) {
-				kQueueLock.Lock();
-				auto& rData = kQueue.front();
-				kActiveObjects.push_back(rData.spGeometry);
-				pRenderer->PrecacheGeometryEx(rData.spGeometry, rData.uiBonesPerPartition, rData.uiBonesPerVertex, rData.pShaderDeclaration);
-				kQueue.pop();
-				bIsEmpty = kQueue.empty();
-				kQueueLock.Unlock();
+			while (WaitForSingleObject(hPauseEvent, INFINITE) == WAIT_OBJECT_0) {
+				GeometryPrecacheQueue::QueuedObject currentItem;
+				{
+					WaitLockScope lock(kQueueLock);
+					if (kQueue.empty())
+						break;
+					currentItem = std::move(kQueue.front());
+					kQueue.pop();
+				}
+
+				pRenderer->PrecacheGeometryEx(
+					currentItem.spGeometry,
+					currentItem.uiBonesPerPartition,
+					currentItem.uiBonesPerVertex,
+					currentItem.pShaderDeclaration
+				);
+				kActiveObjects.push_back(std::move(currentItem.spGeometry));
 			}
 
 			if (uiPrecacheCount && WaitForSingleObject(hPauseEvent, INFINITE) == WAIT_OBJECT_0)

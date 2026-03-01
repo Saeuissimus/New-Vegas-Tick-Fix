@@ -1,46 +1,43 @@
 #pragma once
 
-#include <atomic>
-#include <synchapi.h>
+#include <windows.h>
 
 #pragma comment(lib, "Synchronization.lib")
 
 // Lock that uses WaitOnAddress
 class WaitLock {
-private:
-	bool Release() {
-		return ucLock.exchange(OPEN, std::memory_order_acq_rel) == LOCKED;
-	}
-
 public:
 	WaitLock() = default;
-	~WaitLock() = default;
+	WaitLock(const WaitLock&) = delete;
+	WaitLock& operator=(const WaitLock&) = delete;
 
-	enum LockState : uint8_t {
+	enum LockState : LONG {
 		OPEN	= 0,
-		LOCKED	= 1
+		LOCKED	= 1,
 	};
 
-	std::atomic<uint8_t> ucLock = OPEN;
-	
 	bool TryLock() {
-		return ucLock.exchange(LOCKED, std::memory_order_acq_rel) == OPEN;
+		return InterlockedCompareExchangeAcquire(&lock, LOCKED, OPEN) == OPEN;
 	}
 
 	void Lock() {
-		uint8_t ucCmp = LOCKED;
+		LONG ucCmp = LOCKED;
 		while (true) {
 			if (TryLock())
 				break;
 
-			WaitOnAddress(&ucLock, &ucCmp, sizeof(ucLock), INFINITE);
+			WaitOnAddress(&lock, &ucCmp, sizeof(lock), INFINITE);
 		}
 	}
 
 	void Unlock() {
-		if (Release())
-			WakeByAddressSingle(&ucLock);
+		const LONG prev = InterlockedExchange(&lock, OPEN);
+		if (prev == LOCKED)
+			WakeByAddressSingle(const_cast<LONG*>(&lock));
 	}
+
+private:
+	alignas(4) volatile LONG lock = OPEN;
 };
 
 class WaitLockScope {
