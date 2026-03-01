@@ -19,6 +19,12 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@767f00a3f09872d96a0cb9fcd5e6a4ff33311330
 
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@26b21e5ac5447a90465b29dcd8df7decea1074e1
+
+      - name: Restore NuGet packages (packages.config)
+        run: nuget restore ${{env.SOLUTION_FILE_PATH}} -NonInteractive
+
       - name: Build Release
         run: msbuild /m /p:Configuration=Release ${{env.SOLUTION_FILE_PATH}} /p:PostBuildEventUseInBuild=false
 
