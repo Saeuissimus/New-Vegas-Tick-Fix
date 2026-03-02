@@ -16,8 +16,6 @@ constexpr const char*	PLUGIN_FULL_NAME = "New Vegas Tick Fix";
 
 IDebugLog gLog("logs\\NVTF.log");
 
-uint32_t queryCount = 0;
-
 namespace Main {
 
 	bool bINIRead = false;
@@ -106,11 +104,7 @@ EXTERN_DLL_EXPORT bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* i
 		return false;
 	}
 
-	if (queryCount > 1) {
-		_MESSAGE("Was queried by xNVSE more than once!");
-	}
-
-	return !nvse->isEditor && queryCount == 1;
+	return !nvse->isEditor;
 }
 
 EXTERN_DLL_EXPORT bool NVSEPlugin_Preload() {
